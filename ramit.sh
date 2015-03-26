@@ -144,8 +144,6 @@ fi
 
 _ramcreate
 
-set +x
-
 if [ "$1" == "work" ]
 then
     _workramcopy
