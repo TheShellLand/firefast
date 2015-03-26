@@ -154,7 +154,13 @@ then
     _ramcopy
 fi
 
+if [ "$1" == "-copy" ]
+then
+    _workramcopy
+fi
+
 _createprofile
 _startfirefox
+
 
 read -p "Firefox ended unexpectedly..."
