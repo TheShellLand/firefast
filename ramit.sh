@@ -28,13 +28,13 @@ function _depends(){
     if [ ! -d ${_profiled} ]
     then
 	export _profiled="~/.mozilla/Firefox"
-	if [ ! -f ${_profiled}${_profile} ]
+	if [ ! -f "${_profiled}${_profile}" ]
 	then
 	    echo "Unable to find firefox profile"
 	    exit 1
 	fi
     else
-	if [ ! -f ${_profiled}${_profile} ]
+	if [ ! -f "${_profiled}${_profile}" ]
 	then
 	    echo "Unable to find firefox profile"
 	    exit 1
@@ -57,10 +57,10 @@ function _ramcreate(){
 
 function _ramcopy(){
     export _image="Profiles/profile.tar.bz2"
-    if [ -f "${_image}" ]
+    if [ -f "${_profiled}${_image}" ]
     then
 	echo "Extracting..."
-	tar --extract --bzip2 --file ${_image} --directory ${_ram}
+	tar --extract --bzip2 --file ${_profiled}${_image} --directory ${_ram}
     else
 	echo "profile.tar.bz2 not found"
 	exit 1
@@ -68,9 +68,9 @@ function _ramcopy(){
 }
 
 function _workramcopy(){
-    if [ -d ${_work} ]
+    if [ -d ${_profiled}${_work} ]
     then
-	rsync -ri ${_work}/ ${_ram}/
+	rsync -ri ${_profiled}${_work}/ ${_ram}/
     else
 	echo "Work directory not found"
 	exit 1
@@ -79,7 +79,7 @@ function _workramcopy(){
 
 
 function _createprofile(){
-cat > ${_profiled}${_profile} <<EOF
+cat > "${_profiled}${_profile}" <<EOF
 [Profile0]
 Name=${_workd}
 IsRelative=1
