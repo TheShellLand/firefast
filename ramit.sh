@@ -24,20 +24,14 @@ function _depends(){
 	exit 1
     fi
 
-    export _profiled="~/.mozilla/firefox"
-    if [ ! -d ${_profiled} ]
+    export _profiled=~/.mozilla/firefox
+    if [ ! -f ${_profiled}/${_profile} ]
     then
-	export _profiled="~/.mozilla/Firefox"
-	if [ ! -f "${_profiled}${_profile}" ]
+	export _profiled=~/.mozilla/Firefox
+	if [ ! -f ${_profiled}/${_profile} ]
 	then
 	    echo "Unable to find firefox profile"
-	    exit 1
-	fi
-    else
-	if [ ! -f "${_profiled}${_profile}" ]
-	then
-	    echo "Unable to find firefox profile"
-	    exit 1
+
 	fi
     fi
 }
@@ -57,10 +51,10 @@ function _ramcreate(){
 
 function _ramcopy(){
     export _image="Profiles/profile.tar.bz2"
-    if [ -f "${_profiled}${_image}" ]
+    if [ -f "${_profiled}/${_image}" ]
     then
 	echo "Extracting..."
-	tar --extract --bzip2 --file ${_profiled}${_image} --directory ${_ram}
+	tar --extract --bzip2 --file ${_profiled}/${_image} --directory ${_ram}
     else
 	echo "profile.tar.bz2 not found"
 	exit 1
@@ -68,9 +62,9 @@ function _ramcopy(){
 }
 
 function _workramcopy(){
-    if [ -d ${_profiled}${_work} ]
+    if [ -d ${_profiled}/${_work} ]
     then
-	rsync -ri ${_profiled}${_work}/ ${_ram}/
+	rsync -ri ${_profiled}/${_work}/ ${_ram}/
     else
 	echo "Work directory not found"
 	exit 1
@@ -79,7 +73,7 @@ function _workramcopy(){
 
 
 function _createprofile(){
-cat > "${_profiled}${_profile}" <<EOF
+cat > "${_profiled}/${_profile}" <<EOF
 [Profile0]
 Name=${_workd}
 IsRelative=1
@@ -111,7 +105,13 @@ if [ -z "$1" ]
 then
     echo "Usage ramit.sh [work|ram]"
     echo ""
-    echo "Prerequisit"
+    echo "work	copy work profile to RAM, then run"
+    echo "ram	copy template to RAM, then run"
+    echo ""
+    echo "Prerequisites:"
+    echo " - Existing file: ~/.mozilla/firefox/profiles/profiles.ini"
+    echo " - Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.bz2 (no root dir)"
+    echo " - Existing work directory: ~/.mozilla/firefox/profiles/work"
     exit 1
 fi
 
