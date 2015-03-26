@@ -11,7 +11,21 @@ _profiled=
 _profile=profiles.ini
 _workd=work
 _work="Profiles/work"
+_worksave=
 
+
+trap _cleanup SIGHUP SIGINT SIGTERM SIGQUIT
+
+
+function _cleanup(){
+    if [ "${_worksave}" == 1 ]
+    then
+	echo "Saving work..."
+	rsync -ri ${_ram}/ ${_profiled}/${_work}/ --delete
+	sudo umount firefast
+	echo "Executed."
+    fi
+}
 
 
 function _depends(){
@@ -41,6 +55,17 @@ function _ramcreate(){
     mkdir ${_ram}
     if [ -d ${_ram} ]
     then
+	mount | grep "^firefast" 2>/dev/null >/dev/null
+	if [ $? == 0 ]
+	then
+	    echo "Umounting existing ramdisk..."
+	    i=`mount | grep "^firefast" | grep -c ".*"`
+	    for (( i=${i}; i>0; i-- ))
+	    do
+		umount firefast
+	    done
+	fi
+
 	echo "Mounting ramdisk..."
 	sudo mount -t tmpfs -o size=200M,mode=0777 firefast ${_ram}
     else
@@ -64,6 +89,7 @@ function _ramcopy(){
 function _workramcopy(){
     if [ -d ${_profiled}/${_work} ]
     then
+	export _worksave=1
 	rsync -ri ${_profiled}/${_work}/ ${_ram}/
     else
 	echo "Work directory not found"
