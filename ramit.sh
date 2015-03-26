@@ -62,7 +62,7 @@ function _ramcreate(){
 	    i=`mount | grep "^firefast" | grep -c ".*"`
 	    for (( i=${i}; i>0; i-- ))
 	    do
-		umount firefast
+		sudo umount -l firefast
 	    done
 	fi
 
@@ -114,8 +114,9 @@ EOF
 
 
 function _startfirefox(){
+    echo "Accessing profile ${_uuid}"
     echo "Launching Firefox..."
-    firefox -no-remote -P ${_uuid}
+    firefox -no-remote -P ${_uuid} 2>/dev/null >/dev/null
 }
 
 
@@ -142,6 +143,8 @@ then
 fi
 
 _ramcreate
+
+set +x
 
 if [ "$1" == "work" ]
 then
