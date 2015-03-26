@@ -156,3 +156,5 @@ fi
 
 _createprofile
 _startfirefox
+
+read -p "Firefox ended unexpectedly..."
