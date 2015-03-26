@@ -7,3 +7,4 @@ Prerequisites:
  - Existing file: ~/.mozilla/firefox/profiles/profiles.ini
  - Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.bz2
  - Existing work directory: ~/.mozilla/firefox/profiles/work
+ - Account can sudo
