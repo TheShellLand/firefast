@@ -42,7 +42,7 @@ function _ramcreate(){
     if [ -d ${_ram} ]
     then
 	echo "Mounting ramdisk..."
-	sudo mount -t tmpfs -o size=200M,mode=0777 none ${_ram}
+	sudo mount -t tmpfs -o size=200M,mode=0777 firefast ${_ram}
     else
 	echo "RAM directory unable to be created"
 	exit 1
