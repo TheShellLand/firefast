@@ -1,166 +1,217 @@
-#!/bin/bash
+`#!/bin/bash`;
 
-#
-# Firefox Profile in RAM
-#
-
-
-_uuid=
-_image=
-_profiled=
-_profile=profiles.ini
-_workd=work
-_work="Profiles/work"
-_worksave=
+`#`;
+`# Firefox Profile in RAM`;
+`#`;
 
 
-trap _cleanup SIGHUP SIGINT SIGTERM SIGQUIT
+_uuid=;
+_image=;
+_profiled=;
+_profile=profiles.ini;
+_workd=work;
+_work="profiles/work";
+_worksave=;
+_workimage=;
+_golden=;
+_ram=;
+_keeper=;
 
 
-function _cleanup(){
-    if [ "${_worksave}" == 1 ]
-    then
-	echo "Saving work..."
-	rsync -ri ${_ram}/ ${_profiled}/${_work}/ --delete
-	sudo umount firefast
-	echo "Executed."
-    fi
-}
+trap _cleanup SIGHUP SIGINT SIGTERM SIGQUIT;
 
 
-function _depends(){
-    which uuidgen 2>/dev/null >/dev/null
-    if [ $? == 0 ]
-    then
-	export _uuid=`uuidgen`
-    else
-	echo "uuidgen not found"
-	exit 1
-    fi
+function _cleanup(){ 
+    if [ "$_worksave" == 1 ];
+    then echo "[*] Saving work ...";
+	 rsync -rh ${_ram}/ ${_profiled}/${_work}/ --delete && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 echo "[*] Releasing memory ...";
+	 rm -rf ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 echo "[*] Umounting ...";
+	 sudo umount firefast && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 echo "[*] Executed";
+	 return 0; fi;
 
-    export _profiled=~/.mozilla/firefox
-    if [ ! -f ${_profiled}/${_profile} ]
-    then
-	export _profiled=~/.mozilla/Firefox
-	if [ ! -f ${_profiled}/${_profile} ]
-	then
-	    echo "Unable to find firefox profile"
+    if [ "$_golden" == 1 ];
+    then echo "[*] Creating gold image ...";
 
-	fi
-    fi
-}
+	 if [ -d ${_ram} ];
+	 then if [ -d ${_profiled}/${_work} ];
+	      then if [ -f ${_profiled}/${_image} ];
+		   then cd ${_ram};
+			tar --create --bzip2 --file ${_profiled}/${_image} * && (echo "[Success]") || (echo "[Failed]"; exit 1);
+			echo "[*] Releasing memory ...";
+			rm -rf ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+			return 0;
+		   else echo "[Error] Existing gold image not found";
+			exit 1; fi;
+		   echo "[*] Umounting ...";
+		   sudo umount firefast && (echo "[Success]") || (echo "[Failed]"; exit 1);
+		   echo "[*] Executed";
+	      else echo "[Error] Work profile not found";
+		   exit 1; fi;
+	 else echo "[Error] Ramdisk not found";
+	       exit 1; fi; fi;
+};
 
-function _ramcreate(){
-    export _ram="/tmp/${_uuid}"
-    mkdir ${_ram}
-    if [ -d ${_ram} ]
-    then
-	mount | grep "^firefast" 2>/dev/null >/dev/null
-	if [ $? == 0 ]
-	then
-	    echo "Umounting existing ramdisk..."
-	    i=`mount | grep "^firefast" | grep -c ".*"`
-	    for (( i=${i}; i>0; i-- ))
-	    do
-		sudo umount -l firefast
-	    done
-	fi
 
-	echo "Mounting ramdisk..."
-	sudo mount -t tmpfs -o size=200M,mode=0777 firefast ${_ram}
-    else
-	echo "RAM directory unable to be created"
-	exit 1
-    fi
-}
+function _depends(){ 
+    which uuidgen 2>/dev/null >/dev/null;
+    if [ $? == 0 ];
+    then export _uuid=`uuidgen`;
+    else echo "[Error] uuidgen not found";
+	 exit 1; fi;
+
+    export _profiled=~/.mozilla/firefox;
+    if [ ! -f ${_profiled}/${_profile} ];
+    then export _profiled=~/.mozilla/Firefox;
+	 if [ ! -f ${_profiled}/${_profile} ];
+	 then echo "[Error] Unable to find firefox profile"; fi; fi;
+};
+
+
+function _existingRun(){
+    export _keeper=0;
+
+    pidof firefox 2>/dev/null >/dev/null;
+    if [ $? == 0 ];
+    then echo "[*] Firefox is already running";
+	 pidof -x $0 2>/dev/null >/dev/null;
+	 if [ $? == 0 ];
+	 then echo "[*] Program already running. Spawning new process";
+	      export _keeper=1;
+	      return 0; fi; fi;
+};
+
+
+function _ramcreate(){ 
+    export _ram="/tmp/firefast/${_uuid}";
+    echo "[*] Creating RAMDISK ...";
+    mkdir -p ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+    
+    if [ -d ${_ram} ];
+    then if [ ! $_keeper == 1 ];
+	 then mount | grep "^firefast" 2>/dev/null >/dev/null;
+	      if [ $? == 0 ];
+	      then echo "[*] Umounting existing ramdisk ...";
+		   i=`mount | grep "^firefast" | grep -c ".*"`;
+		   for (( i=${i}; i>0; i-- ));
+		   do sudo umount -l firefast && (echo "[Success]") || (echo "[Failed]"; exit 1);
+		   done; fi; fi;
+
+	 echo "[*] Mounting ramdisk ...";
+	 sudo mount -t tmpfs -o size=180M,mode=0777 firefast ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 return 0;
+    else echo "[Error] RAM directory unable to be created";
+	 exit 1; fi; 
+};
 
 function _ramcopy(){
-    export _image="Profiles/profile.tar.bz2"
-    if [ -f "${_profiled}/${_image}" ]
-    then
-	echo "Extracting..."
-	tar --extract --bzip2 --file ${_profiled}/${_image} --directory ${_ram}
-    else
-	echo "profile.tar.bz2 not found"
-	exit 1
-    fi
-}
+    export _image="profiles/profile.tar.bz2";
+    if [ -f "${_profiled}/${_image}" ];
+    then echo "[*] Extracting image ...";
+	 tar --extract --bzip2 --file ${_profiled}/${_image} --directory ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 return 0;
+    else echo "[Error] profile.tar.bz2 not found";
+	 exit 1; fi;
+};
 
 function _workramcopy(){
-    if [ -d ${_profiled}/${_work} ]
-    then
-	export _worksave=1
-	rsync -ri ${_profiled}/${_work}/ ${_ram}/
-    else
-	echo "Work directory not found"
-	exit 1
-    fi 
-}
+    if [ "$1" == "bad" ];
+    then export _workimage="profiles/work.tar.bz2";
+	 if [ -f "${_profiled}/${_workimage}" ];
+	 then echo "[*] Deleting old files ...";
+	      rm -rf "${_profiled}/${_work}/*" && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	      echo "[*] Extracting files ...";
+	      tar --extract --bzip2 --file ${_profiled}/${_workimage} --directory ${_profiled}/${_work} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 else echo "[Error] Restore from work image failed";
+	      echo "[Error] Work image not found"; exit 1; fi; fi;
+    
+    if [ -d "${_profiled}/${_work}" ];
+    then 
+	export _worksave=1;
+	echo "[*] Copying to RAM ...";
+	rsync -r ${_profiled}/${_work}/ ${_ram}/ && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	return 0;
+    else echo "[Error] Work directory not found";
+	 exit 1; fi;
+};
 
 
-function _createprofile(){
+
+
+function _createprofile(){ 
 cat > "${_profiled}/${_profile}" <<EOF
+[General]
+StartWithLastProfile=0
+
 [Profile0]
 Name=${_workd}
 IsRelative=1
 Path=${_work}
+Default=0
 
 [Profile1]
 Name=${_uuid}
 IsRelative=0
 Path=${_ram}
+Default=0
 EOF
-}
+
+return 0;
+};
 
 
-function _startfirefox(){
-    echo "Accessing profile ${_uuid}"
-    echo "Launching Firefox..."
-    firefox -no-remote -P ${_uuid} 2>/dev/null >/dev/null
-}
+function _startfirefox(){ 
+    echo "[*] Accessing profile ${_uuid}";
+    echo "[*] Launching Firefox ...";
+    firefox -no-remote -P ${_uuid} 2>/dev/null >/dev/null;
+    echo "[*] Firefox closed";
+    _cleanup;
+    exit 0; 
+};
 
 
 
 
 
-# main
+`# main`;
 
 
-_depends
+_depends;
+_existingRun;
 
-if [ -z "$1" ]
-then
-    echo "Usage ramit.sh [work|ram]"
-    echo ""
-    echo "work	copy work profile to RAM, then run"
-    echo "ram	copy template to RAM, then run"
-    echo ""
-    echo "Prerequisites:"
-    echo " - Existing file: ~/.mozilla/firefox/profiles/profiles.ini"
-    echo " - Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.bz2 (no root dir)"
-    echo " - Existing work directory: ~/.mozilla/firefox/profiles/work"
-    exit 1
-fi
+if [ -z "$1" ];
+then echo "Usage ramit.sh [work|ram]";
+     echo "";
+     echo "	work	copy work profile to RAM, then run";
+     echo "	ram	copy template to RAM, then run";
+     echo "";
+     echo "Additional Options:";
+     echo "";
+     echo "	gold	copy template to RAM, then create gold image";
+     echo "	bad	restore from work template, then run work";
+     echo "";
+     echo "";
+     echo " [Required] Existing file: ~/.mozilla/firefox/profiles/profiles.ini";
+     echo " [Required] Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.bz2 (no root dir)";
+     echo " [Required] Existing work directory: ~/.mozilla/firefox/profiles/work";
+     exit 1; fi;
 
-_ramcreate
+_ramcreate;
 
-if [ "$1" == "work" ]
-then
-    _workramcopy
-fi
+if [ "$1" == "work" ];
+then _workramcopy; fi;
 
-if [ "$1" == "ram" ]
-then
-    _ramcopy
-fi
+if [ "$1" == "ram" ];
+then _ramcopy; fi;
 
-if [ "$1" == "-copy" ]
-then
-    _workramcopy
-fi
+if [ "$1" == "gold" ];
+then export _golden=1;
+     _ramcopy; fi;
 
-_createprofile
-_startfirefox
+if [ "$1" == "bad" ];
+then _workramcopy bad; fi;
 
-
-read -p "Firefox ended unexpectedly..."
+_createprofile;
+_startfirefox;
