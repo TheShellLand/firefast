@@ -24,9 +24,9 @@ trap _cleanup SIGHUP SIGINT SIGTERM SIGQUIT;
 function _cleanup(){ 
     if [ "$_worksave" == 1 ];
     then echo "[*] Saving work ...";
-	 rsync -rh ${_ram}/ ${_profiled}/${_work}/ --delete && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 rsync -rh ${_ram}/ ${_profiled}/${_work}/ --delete || (echo "[Failed]"; exit 1);
 	 echo "[*] Releasing memory ...";
-	 rm -rf ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 rm -rf ${_ram} || (echo "[Failed]"; exit 1);
 	 echo "[*] Executed";
 	 return 0; fi;
 
@@ -37,9 +37,9 @@ function _cleanup(){
 	 then if [ -d ${_profiled}/${_work} ];
 	      then if [ -f ${_profiled}/${_image} ];
 		   then cd ${_ram};
-			tar --create --bzip2 --file ${_profiled}/${_image} * && (echo "[Success]") || (echo "[Failed]"; exit 1);
+			tar --create --gzip --file ${_profiled}/${_image} * || (echo "[Failed]"; exit 1);
 			echo "[*] Releasing memory ...";
-			rm -rf ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+			rm -rf ${_ram} || (echo "[Failed]"; exit 1);
 			return 0;
 		   else echo "[Error] Existing gold image not found";
 			exit 1; fi;
@@ -60,7 +60,7 @@ function _depends(){
 
     export _profiled=~/.mozilla/firefox;
     if [ ! -f ${_profiled}/${_profile} ];
-    then export _profiled=~/.mozilla/Firefox;
+    then export _profiled=~/.mozilla/firefox;
 	 if [ ! -f ${_profiled}/${_profile} ];
 	 then echo "[Error] Unable to find firefox profile"; fi; fi;
 };
@@ -83,27 +83,27 @@ function _existingRun(){
 function _ramcreate(){ 
     export _ram="/dev/shm/firefast/${_uuid}";
     echo "[*] Creating RAMDISK ...";
-    mkdir -p ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+    mkdir -p ${_ram} || (echo "[Failed]"; exit 1);
 };
 
 function _ramcopy(){
-    export _image="profiles/profile.tar.bz2";
+    export _image="profiles/mrrobot.tar.gz";
     if [ -f "${_profiled}/${_image}" ];
     then echo "[*] Extracting image ...";
-	 tar --extract --bzip2 --file ${_profiled}/${_image} --directory ${_ram} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	 tar --extract --gzip --file ${_profiled}/${_image} --directory ${_ram} || (echo "[Failed]"; exit 1);
 	 return 0;
-    else echo "[Error] profile.tar.bz2 not found";
+    else echo "[Error] $_image not found";
 	 exit 1; fi;
 };
 
 function _workramcopy(){
     if [ "$1" == "bad" ];
-    then export _workimage="profiles/work.tar.bz2";
+    then export _workimage="profiles/work.tar.gz";
 	 if [ -f "${_profiled}/${_workimage}" ];
 	 then echo "[*] Deleting old files ...";
-	      rm -rf "${_profiled}/${_work}/*" && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	      rm -rf "${_profiled}/${_work}/*" || (echo "[Failed]"; exit 1);
 	      echo "[*] Extracting files ...";
-	      tar --extract --bzip2 --file ${_profiled}/${_workimage} --directory ${_profiled}/${_work} && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	      tar --extract --gzip --file ${_profiled}/${_workimage} --directory ${_profiled}/${_work} || (echo "[Failed]"; exit 1);
 	 else echo "[Error] Restore from work image failed";
 	      echo "[Error] Work image not found"; exit 1; fi; fi;
     
@@ -111,7 +111,7 @@ function _workramcopy(){
     then 
 	export _worksave=1;
 	echo "[*] Copying to RAM ...";
-	rsync -r ${_profiled}/${_work}/ ${_ram}/ && (echo "[Success]") || (echo "[Failed]"; exit 1);
+	rsync -r ${_profiled}/${_work}/ ${_ram}/ || (echo "[Failed]"; exit 1);
 	return 0;
     else echo "[Error] Work directory not found";
 	 exit 1; fi;
@@ -174,7 +174,7 @@ then echo "Usage ramit.sh [work|ram]";
      echo "";
      echo "";
      echo " [Required] Existing file: ~/.mozilla/firefox/profiles/profiles.ini";
-     echo " [Required] Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.bz2 (no root dir)";
+     echo " [Required] Existing profile archive: ~/.mozilla/firefox/profiles/profile.tar.gz (no root dir)";
      echo " [Required] Existing work directory: ~/.mozilla/firefox/profiles/work";
      exit 1; fi;
 
