@@ -48,6 +48,17 @@ function _cleanup(){
 		   exit 1; fi;
 	 else echo "[Error] Ramdisk not found";
 	       exit 1; fi; fi;
+
+    if [ "$_newram" == 1 ]; then
+        echo "[*] Creating ram image ...";
+        if [ -d ${_ram} ]; then
+            if [ -f ${_profiled}/${_image} ]; then
+                cd ${_ram};
+                tar --create --gzip --file ${_profiled}/${_image} * || (echo "[Failed]"; exit 1);
+                echo "[*] Releasing memory ...";
+                rm -rf ${_ram} || (echo "[Failed]"; exit 1);
+                return 0;
+    fi; fi; fi;
 };
 
 
@@ -164,13 +175,14 @@ _existingRun;
 if [ -z "$1" ];
 then echo "Usage ramit.sh [work|ram]";
      echo "";
-     echo "	work	copy work profile to RAM, then run";
-     echo "	ram	copy template to RAM, then run";
+     echo "	work    copy work profile to RAM, then run";
+     echo "	ram copy template to RAM, then run";
      echo "";
      echo "Additional Options:";
      echo "";
-     echo "	gold	copy template to RAM, then create gold image";
+     echo "	gold	copy work template to RAM, then create gold image";
      echo "	bad	restore from work template, then run work";
+     echo "	new	copy ram template to RAM, then create new ram image";
      echo "";
      echo "";
      echo " [Required] Existing file: ~/.mozilla/firefox/profiles/profiles.ini";
@@ -192,6 +204,10 @@ then export _golden=1;
 
 if [ "$1" == "bad" ];
 then _workramcopy bad; fi;
+
+if [ "$1" == "new" ];
+then export _newram=1
+    _ramcopy; fi;
 
 _createprofile;
 _startfirefox;
