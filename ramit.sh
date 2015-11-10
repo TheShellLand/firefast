@@ -215,7 +215,7 @@ _ramcreate
 if [ ! -z "$2" ]
 then export firefox_build="$2"
     if [ "$firefox_build" == nightly ]
-    then which firefox-nightly
+    then which firefox-nightly 2>/dev/null >/dev/null
         if [ ! $? == 0 ]
         then echo "[Error] Firefox nightly (firefox-nightly) not found"; fi
     fi
