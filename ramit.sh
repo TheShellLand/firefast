@@ -25,7 +25,7 @@ _workimage=
 _golden=
 _ram=
 _keeper=
-
+firefox_build=
 
 
 trap _cleanup SIGHUP SIGINT SIGTERM SIGQUIT
