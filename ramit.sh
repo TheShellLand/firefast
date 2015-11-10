@@ -107,7 +107,7 @@ StartWithLastProfile=0
 
 [Profile0]
 Name=${_workd}
-IsRelative=1
+IsRelative=0
 Path=${_ram}
 Default=0
 
